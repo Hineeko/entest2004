@@ -554,6 +554,52 @@
   <h1>Business English Quizes (A2+)</h1>
   <p>Created by Bupha Ravirot &middot; Reference: Business Partner A2+</p>
   <div class="student-info">
+    <div>
+      <label for="studentName">Student Name ภาษาไทย</label>
+      <input type="text" id="studentName" placeholder="Enter your name" oninput="localStorage.setItem('bp_studentName', this.value);" />
+    </div>
+    <div>
+      <label for="studentId">Student ID (จำเป็น)</label>
+      <input type="text" id="studentId" placeholder="กรอกรหัสนักศึกษา" oninput="localStorage.setItem('bp_studentId', this.value);" onblur="syncFromFirestore();" />
+    </div>
+    <div>
+      <label for="studentEmail">Email Address</label>
+      <input type="email" id="studentEmail" placeholder="Enter your email" oninput="localStorage.setItem('bp_studentEmail', this.value);" />
+    </div>
+    <div>
+      <label for="studentPin">Private PIN (4 หลัก)</label>
+      <input type="password" id="studentPin" maxlength="4" placeholder="ตั้งรหัส 4 หลัก" oninput="localStorage.setItem('bp_pin', this.value);" />
+    </div>
+    <div>
+      <button class="btn-save-progress" onclick="saveToFirestore()">&#128190; Save Progress</button>
+      <div id="save-status" class="save-status"></div>
+    </div>
+  </div>
+</header>
+  <h1>Business English Quizes (A2+)</h1>
+  <p>Created by Bupha Ravirot &middot; Reference: Business Partner A2+</p>
+  <div class="student-info">
+  <div>
+    <label for="studentName">Student Name ภาษาไทย</label>
+    <input type="text" id="studentName" placeholder="Enter your name" oninput="localStorage.setItem('bp_studentName', this.value);" />
+  </div>
+  <div>
+    <label for="studentId">Student ID (จำเป็น)</label>
+    <input type="text" id="studentId" placeholder="กรอกรหัสนักศึกษา" oninput="localStorage.setItem('bp_studentId', this.value);" onblur="syncFromFirestore();" />
+  </div>
+  <div>
+    <label for="studentEmail">Email Address</label>
+    <input type="email" id="studentEmail" placeholder="Enter your email" oninput="localStorage.setItem('bp_studentEmail', this.value);" />
+  </div>
+  <div>
+    <label for="studentPin">Private PIN (4 หลัก)</label>
+    <input type="password" id="studentPin" maxlength="4" placeholder="ตั้งรหัส 4 หลัก" oninput="localStorage.setItem('bp_pin', this.value);" />
+  </div>
+  <div>
+    <button class="btn-save-progress" onclick="saveToFirestore()">&#128190; Save Progress</button>
+    <div id="save-status" class="save-status"></div>
+  </div>
+</div>
   <div>
     <label for="studentName">Student Name ภาษาไทย</label>
     <input type="text" id="studentName" placeholder="Enter your name" oninput="localStorage.setItem('bp_studentName', this.value);" />
@@ -570,6 +616,7 @@
     <button class="btn-save-progress" onclick="saveToFirestore()">&#128190; Save Progress</button>
     <div id="save-status" class="save-status"></div>
   </div>
+
 </div>
 </header>
 
@@ -1299,83 +1346,90 @@ function saveToFirestore(auto) {
   var sid   = document.getElementById('studentId').value.trim();
   var name  = document.getElementById('studentName').value.trim();
   var email = document.getElementById('studentEmail').value.trim();
+  var pin   = document.getElementById('studentPin').value.trim(); // ดึงค่า PIN
 
-  if (!sid) {
-    if (!auto) alert('กรุณากรอก Student ID ก่อนบันทึกความคืบหน้าครับ');
+  if (!sid || pin.length < 4) {
+    if (!auto) alert('กรุณากรอก Student ID และ PIN 4 หลักให้ครบก่อนบันทึกครับ');
     return;
   }
 
-  // ดักคนชุ่ย: ถ้ายังไม่เคยล็อคช่อง ให้ถามยืนยันรหัสก่อนเซฟครั้งแรก
-  var idField = document.getElementById('studentId');
-  if (!idField.hasAttribute('readonly') && !auto) {
-    var conf = confirm('โปรดยืนยันรหัสนักศึกษาของคุณ:\n\n' + sid + '\n\nตรวจสอบให้มั่นใจว่า "พิมพ์ถูกทุกตัว" หากรหัสผิดคะแนนจะไม่เป็นชื่อคุณ และจะไม่สามารถกลับมาแก้ไขได้อีก!');
-    if (!conf) return; 
-  }
+  db.collection('students').doc(sid).get().then(function(doc) {
+    if (doc.exists) {
+      var d = doc.data();
 
-  var completed = Object.keys(completedExercises).length;
-  var pct = Math.round(completed / TOTAL_EXERCISES * 100);
-  var sec = getSectionScores();
-
-  var data = {
-    name:                  name  || '(not provided)',
-    studentId:             sid,
-    email:                 email || '(not provided)',
-    exercisesCompleted:    completed,
-    totalExercises:        TOTAL_EXERCISES,
-    progressPct:           pct,
-    vocabScore:            sec.vocab.pct,
-    grammarScore:          sec.grammar.pct,
-    commScore:             sec.comm.pct,
-    completedExerciseIds:  completedExercises,
-    savedAnswers:          savedExAnswers,
-    lastUpdated:           firebase.firestore.FieldValue.serverTimestamp()
-  };
-
-  if (!auto) showSaveStatus('Saving\u2026', null);
-
-  db.collection('students').doc(sid).set(data, { merge: true })
-    .then(function() {
-      if (!auto) {
-        showSaveStatus('\u2713 Progress saved!', true);
-        lockAllFields(); // เซฟสำเร็จแล้วค่อยสั่งล็อคทุกช่อง
+      if (d.pin && d.pin !== pin) {
+        if (!auto) alert('PIN ไม่ถูกต้อง! ไม่สามารถบันทึกทับข้อมูลของผู้อื่นได้');
+        return;
       }
-    })
-    .catch(function(err) {
-      if (!auto) showSaveStatus('Error: ' + err.message, false);
-    });
+    }
+
+    var completed = Object.keys(completedExercises).length;
+    var pct = Math.round(completed / TOTAL_EXERCISES * 100);
+    var sec = getSectionScores();
+
+    var data = {
+      name: name || '(not provided)',
+      studentId: sid,
+      email: email || '(not provided)',
+      pin: pin,
+      exercisesCompleted: completed,
+      progressPct: pct,
+      vocabScore: sec.vocab.pct,
+      grammarScore: sec.grammar.pct,
+      commScore: sec.comm.pct,
+      completedExerciseIds: completedExercises,
+      savedAnswers: savedExAnswers,
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    return db.collection('students').doc(sid).set(data, { merge: true });
+  })
+  .then(function() {
+    if (!auto) {
+      showSaveStatus('✓ Progress saved!', true);
+      lockAllFields();
+    }
+  })
+  .catch(function(err) {
+    if (!auto && err) showSaveStatus('Error: ' + err.message, false);
+  });
 }
 
 function lockAllFields() {
   document.getElementById('studentName').setAttribute('readonly', 'readonly');
   document.getElementById('studentId').setAttribute('readonly', 'readonly');
   document.getElementById('studentEmail').setAttribute('readonly', 'readonly');
+  document.getElementById('studentPin').setAttribute('readonly', 'readonly'); // ล็อกช่อง PIN
 }
 
 function syncFromFirestore() {
   var sid = document.getElementById('studentId').value.trim() || localStorage.getItem('bp_studentId');
-  if (!sid) return;
+  var pin = document.getElementById('studentPin').value.trim() || localStorage.getItem('bp_pin');
+  
+  if (!sid || !pin) return;
 
-  db.collection('students').doc(sid).get()
-    .then(function(doc) {
-      if (!doc.exists) return;
-      var d = doc.data();
+  db.collection('students').doc(sid).get().then(function(doc) {
+    if (!doc.exists) return;
+    var d = doc.data();
 
-      if (d.completedExerciseIds) {
-        completedExercises = d.completedExerciseIds;
-        localStorage.setItem('bp_progress', JSON.stringify(completedExercises));
-      }
+    if (d.pin && d.pin !== pin) {
+      console.log('PIN mismatch. Access denied.');
+      return;
+    }
 
-      if (d.savedAnswers) {
-        savedExAnswers = d.savedAnswers;
-        localStorage.setItem('bp_answers', JSON.stringify(savedExAnswers));
-      }
-	  
-      updateProgressBar();
-      initAllData();
-      
-      console.log('Sync complete: UI Updated for ID ' + sid);
-    })
-    .catch(function(err) { console.log('Sync error:', err); });
+    if (d.completedExerciseIds) {
+      completedExercises = d.completedExerciseIds;
+      localStorage.setItem('bp_progress', JSON.stringify(completedExercises));
+    }
+    if (d.savedAnswers) {
+      savedExAnswers = d.savedAnswers;
+      localStorage.setItem('bp_answers', JSON.stringify(savedExAnswers));
+    }
+    
+    updateProgressBar();
+    initAllData();
+    console.log('Verified & Synced for ID: ' + sid);
+  });
 }
 
 function showSaveStatus(msg, ok) {
@@ -2092,12 +2146,17 @@ function restoreQuizState() {
   var name = localStorage.getItem('bp_studentName');
   var id = localStorage.getItem('bp_studentId');
   var email = localStorage.getItem('bp_studentEmail');
+  var pin = localStorage.getItem('bp_pin');
+  
   var nameEl  = document.getElementById('studentName');
   var idEl    = document.getElementById('studentId');
   var emailEl = document.getElementById('studentEmail');
+  var pinEl   = document.getElementById('studentPin');
+
   if (name)  { nameEl.value  = name;  }
   if (id)    { idEl.value    = id;    }
   if (email) { emailEl.value = email; }
+  if (pin)   { pinEl.value   = pin;   }
 
   var saved = localStorage.getItem('bp_quizState');
   if (!saved) return;
@@ -2682,11 +2741,11 @@ function exportCSV() {
   db.collection('students').get()
     .then(function(snapshot) {
       if (snapshot.empty) { alert('No student records found.'); return; }
-      var rows = [['Name', 'Student ID', 'Email', 'Exercises Completed', 'Total Exercises', 'Progress %', 'Vocabulary Score %', 'Grammar Score %', 'Communication & Skills Score %', 'Last Updated']];
+      var rows = [['Name', 'Student ID', 'PIN', 'Email', 'Exercises Completed', 'Total Exercises', 'Progress %', 'Vocabulary Score %', 'Grammar Score %', 'Communication & Skills Score %', 'Last Updated']];
       snapshot.forEach(function(doc) {
         var d = doc.data();
         var ts = d.lastUpdated ? d.lastUpdated.toDate().toLocaleString() : '';
-        rows.push([d.name, d.studentId, d.email, d.exercisesCompleted, d.totalExercises, d.progressPct, d.vocabScore != null ? d.vocabScore : '', d.grammarScore != null ? d.grammarScore : '', d.commScore != null ? d.commScore : '', ts]);
+        rows.push([d.name, d.studentId, d.pin || '', d.email, d.exercisesCompleted, d.totalExercises, d.progressPct, d.vocabScore != null ? d.vocabScore : '', d.grammarScore != null ? d.grammarScore : '', d.commScore != null ? d.commScore : '', ts]);
       });
       var csv = rows.map(function(r) {
         return r.map(function(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }).join(',');
@@ -2705,6 +2764,6 @@ function exportCSV() {
 <div style="text-align:center; padding: 24px 0 16px; opacity:0.4; font-size:0.78rem;">
   <button onclick="exportCSV()" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:0.78rem;">Admin Export</button>
 </div>
- 
+
 </body>
 </html>
