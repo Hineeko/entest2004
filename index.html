@@ -554,23 +554,23 @@
   <h1>Business English Quizes (A2+)</h1>
   <p>Created by Bupha Ravirot &middot; Reference: Business Partner A2+</p>
   <div class="student-info">
-    <div>
-      <label for="studentName">Student Name ภาษาไทย</label>
-      <input type="text" id="studentName" placeholder="Enter your name" autocomplete="name" autocapitalize="words" oninput="localStorage.setItem('bp_studentName', this.value);" onblur="lockFieldIfFilled(this, 'bp_studentName');" />
-    </div>
-    <div>
-      <label for="studentId">Student ID</label>
-      <input type="text" id="studentId" placeholder="Enter your ID" autocomplete="off" inputmode="text" oninput="localStorage.setItem('bp_studentId', this.value);" onblur="lockFieldIfFilled(this, 'bp_studentId');" />
-    </div>
-    <div>
-      <label for="studentEmail">Email Address</label>
-      <input type="email" id="studentEmail" placeholder="Enter your email" autocomplete="email" inputmode="email" oninput="localStorage.setItem('bp_studentEmail', this.value);" onblur="lockFieldIfFilled(this, 'bp_studentEmail');" />
-    </div>
-    <div>
-      <button class="btn-save-progress" onclick="saveToFirestore()">&#128190; Save Progress</button>
-      <div id="save-status" class="save-status"></div>
-    </div>
+  <div>
+    <label for="studentName">Student Name ภาษาไทย</label>
+    <input type="text" id="studentName" placeholder="Enter your name" oninput="localStorage.setItem('bp_studentName', this.value);" />
   </div>
+  <div>
+    <label for="studentId">Student ID (จำเป็น)</label>
+    <input type="text" id="studentId" placeholder="กรอกรหัสนักศึกษา" oninput="localStorage.setItem('bp_studentId', this.value);" onblur="syncFromFirestore();" />
+  </div>
+  <div>
+    <label for="studentEmail">Email Address</label>
+    <input type="email" id="studentEmail" placeholder="Enter your email" oninput="localStorage.setItem('bp_studentEmail', this.value);" />
+  </div>
+  <div>
+    <button class="btn-save-progress" onclick="saveToFirestore()">&#128190; Save Progress</button>
+    <div id="save-status" class="save-status"></div>
+  </div>
+</div>
 </header>
 
 <nav class="main-nav">
@@ -1301,8 +1301,15 @@ function saveToFirestore(auto) {
   var email = document.getElementById('studentEmail').value.trim();
 
   if (!sid) {
-    if (!auto) alert('Please put your student ID');
+    if (!auto) alert('กรุณากรอก Student ID ก่อนบันทึกความคืบหน้าครับ');
     return;
+  }
+
+  // ดักคนชุ่ย: ถ้ายังไม่เคยล็อคช่อง ให้ถามยืนยันรหัสก่อนเซฟครั้งแรก
+  var idField = document.getElementById('studentId');
+  if (!idField.hasAttribute('readonly') && !auto) {
+    var conf = confirm('โปรดยืนยันรหัสนักศึกษาของคุณ:\n\n' + sid + '\n\nตรวจสอบให้มั่นใจว่า "พิมพ์ถูกทุกตัว" หากรหัสผิดคะแนนจะไม่เป็นชื่อคุณ และจะไม่สามารถกลับมาแก้ไขได้อีก!');
+    if (!conf) return; 
   }
 
   var completed = Object.keys(completedExercises).length;
@@ -1320,7 +1327,7 @@ function saveToFirestore(auto) {
     grammarScore:          sec.grammar.pct,
     commScore:             sec.comm.pct,
     completedExerciseIds:  completedExercises,
-    savedAnswers:          savedExAnswers, 
+    savedAnswers:          savedExAnswers,
     lastUpdated:           firebase.firestore.FieldValue.serverTimestamp()
   };
 
@@ -1328,11 +1335,20 @@ function saveToFirestore(auto) {
 
   db.collection('students').doc(sid).set(data, { merge: true })
     .then(function() {
-      if (!auto) showSaveStatus('\u2713 Progress saved!', true);
+      if (!auto) {
+        showSaveStatus('\u2713 Progress saved!', true);
+        lockAllFields(); // เซฟสำเร็จแล้วค่อยสั่งล็อคทุกช่อง
+      }
     })
     .catch(function(err) {
       if (!auto) showSaveStatus('Error: ' + err.message, false);
     });
+}
+
+function lockAllFields() {
+  document.getElementById('studentName').setAttribute('readonly', 'readonly');
+  document.getElementById('studentId').setAttribute('readonly', 'readonly');
+  document.getElementById('studentEmail').setAttribute('readonly', 'readonly');
 }
 
 function syncFromFirestore() {
@@ -2075,9 +2091,9 @@ function restoreQuizState() {
   var nameEl  = document.getElementById('studentName');
   var idEl    = document.getElementById('studentId');
   var emailEl = document.getElementById('studentEmail');
-  if (name)  { nameEl.value  = name;  nameEl.setAttribute('readonly', 'readonly'); }
-  if (id)    { idEl.value    = id;    idEl.setAttribute('readonly', 'readonly'); }
-  if (email) { emailEl.value = email; emailEl.setAttribute('readonly', 'readonly'); }
+  if (name)  { nameEl.value  = name;  }
+  if (id)    { idEl.value    = id;    }
+  if (email) { emailEl.value = email; }
 
   var saved = localStorage.getItem('bp_quizState');
   if (!saved) return;
