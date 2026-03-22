@@ -1320,7 +1320,7 @@ function saveToFirestore(auto) {
     grammarScore:          sec.grammar.pct,
     commScore:             sec.comm.pct,
     completedExerciseIds:  completedExercises,
-    savedAnswers:          savedExAnswers, // เพิ่มเพื่อให้ซิงค์คำตอบข้ามเครื่องได้
+    savedAnswers:          savedExAnswers, 
     lastUpdated:           firebase.firestore.FieldValue.serverTimestamp()
   };
 
