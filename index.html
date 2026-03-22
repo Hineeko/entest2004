@@ -576,49 +576,8 @@
     </div>
   </div>
 </header>
-  <h1>Business English Quizes (A2+)</h1>
-  <p>Created by Bupha Ravirot &middot; Reference: Business Partner A2+</p>
-  <div class="student-info">
-  <div>
-    <label for="studentName">Student Name ภาษาไทย</label>
-    <input type="text" id="studentName" placeholder="Enter your name" oninput="localStorage.setItem('bp_studentName', this.value);" />
-  </div>
-  <div>
-    <label for="studentId">Student ID (จำเป็น)</label>
-    <input type="text" id="studentId" placeholder="กรอกรหัสนักศึกษา" oninput="localStorage.setItem('bp_studentId', this.value);" onblur="syncFromFirestore();" />
-  </div>
-  <div>
-    <label for="studentEmail">Email Address</label>
-    <input type="email" id="studentEmail" placeholder="Enter your email" oninput="localStorage.setItem('bp_studentEmail', this.value);" />
-  </div>
-  <div>
-    <label for="studentPin">Private PIN (4 หลัก)</label>
-    <input type="password" id="studentPin" maxlength="4" placeholder="ตั้งรหัส 4 หลัก" oninput="localStorage.setItem('bp_pin', this.value);" />
-  </div>
-  <div>
-    <button class="btn-save-progress" onclick="saveToFirestore()">&#128190; Save Progress</button>
-    <div id="save-status" class="save-status"></div>
-  </div>
-</div>
-  <div>
-    <label for="studentName">Student Name ภาษาไทย</label>
-    <input type="text" id="studentName" placeholder="Enter your name" oninput="localStorage.setItem('bp_studentName', this.value);" />
-  </div>
-  <div>
-    <label for="studentId">Student ID (จำเป็น)</label>
-    <input type="text" id="studentId" placeholder="กรอกรหัสนักศึกษา" oninput="localStorage.setItem('bp_studentId', this.value);" onblur="syncFromFirestore();" />
-  </div>
-  <div>
-    <label for="studentEmail">Email Address</label>
-    <input type="email" id="studentEmail" placeholder="Enter your email" oninput="localStorage.setItem('bp_studentEmail', this.value);" />
-  </div>
-  <div>
-    <button class="btn-save-progress" onclick="saveToFirestore()">&#128190; Save Progress</button>
-    <div id="save-status" class="save-status"></div>
-  </div>
 
-</div>
-</header>
+<nav class="main-nav">
 
 <nav class="main-nav">
   <button class="nav-btn active" onclick="showUnit(0)">Travelling for Work</button>
