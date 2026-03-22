@@ -1307,8 +1307,6 @@ function saveToFirestore(auto) {
 
   var completed = Object.keys(completedExercises).length;
   var pct = Math.round(completed / TOTAL_EXERCISES * 100);
-  
-  var docId = sid;
   var sec = getSectionScores();
 
   var data = {
@@ -1322,8 +1320,20 @@ function saveToFirestore(auto) {
     grammarScore:          sec.grammar.pct,
     commScore:             sec.comm.pct,
     completedExerciseIds:  completedExercises,
+    savedAnswers:          savedExAnswers, 
     lastUpdated:           firebase.firestore.FieldValue.serverTimestamp()
   };
+
+  if (!auto) showSaveStatus('Saving\u2026', null);
+
+  db.collection('students').doc(sid).set(data, { merge: true })
+    .then(function() {
+      if (!auto) showSaveStatus('\u2713 Progress saved!', true);
+    })
+    .catch(function(err) {
+      if (!auto) showSaveStatus('Error: ' + err.message, false);
+    });
+}
 
   if (!auto) showSaveStatus('Saving\u2026', null);
 
@@ -1337,19 +1347,24 @@ function saveToFirestore(auto) {
 }
 
 function syncFromFirestore() {
-  var sid   = localStorage.getItem('bp_studentId');
-  var email = localStorage.getItem('bp_studentEmail');
-  if (!sid && !email) return;
-  var docId = sid || email.replace(/[^a-zA-Z0-9]/g, '_');
-  db.collection('students').doc(docId).get()
+  var sid = document.getElementById('studentId').value.trim() || localStorage.getItem('bp_studentId');
+  if (!sid) return;
+
+  db.collection('students').doc(sid).get()
     .then(function(doc) {
       if (!doc.exists) return;
-      var remote = doc.data().completedExerciseIds;
-      if (remote && typeof remote === 'object') {
-        Object.keys(remote).forEach(function(id) { completedExercises[id] = true; });
-        saveProgress();
-        updateProgressBar();
+      var d = doc.data();
+      if (d.completedExerciseIds) {
+        completedExercises = d.completedExerciseIds;
+        localStorage.setItem('bp_progress', JSON.stringify(completedExercises));
       }
+      if (d.savedAnswers) {
+        savedExAnswers = d.savedAnswers;
+        localStorage.setItem('bp_answers', JSON.stringify(savedExAnswers));
+      }
+      updateProgressBar();
+      loadExAnswers(); 
+      console.log('Data synced from cloud for ID: ' + sid);
     })
     .catch(function(err) { console.log('Sync error:', err); });
 }
