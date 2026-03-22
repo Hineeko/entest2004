@@ -1311,7 +1311,7 @@ function saveToFirestore(auto) {
 
   var data = {
     name:                  name  || '(not provided)',
-    studentId:             sid   || '(not provided)',
+    studentId:             sid,
     email:                 email || '(not provided)',
     exercisesCompleted:    completed,
     totalExercises:        TOTAL_EXERCISES,
@@ -1320,24 +1320,13 @@ function saveToFirestore(auto) {
     grammarScore:          sec.grammar.pct,
     commScore:             sec.comm.pct,
     completedExerciseIds:  completedExercises,
-    savedAnswers:          savedExAnswers, 
+    savedAnswers:          savedExAnswers, // เพิ่มเพื่อให้ซิงค์คำตอบข้ามเครื่องได้
     lastUpdated:           firebase.firestore.FieldValue.serverTimestamp()
   };
 
   if (!auto) showSaveStatus('Saving\u2026', null);
 
   db.collection('students').doc(sid).set(data, { merge: true })
-    .then(function() {
-      if (!auto) showSaveStatus('\u2713 Progress saved!', true);
-    })
-    .catch(function(err) {
-      if (!auto) showSaveStatus('Error: ' + err.message, false);
-    });
-}
-
-  if (!auto) showSaveStatus('Saving\u2026', null);
-
-  db.collection('students').doc(docId).set(data, { merge: true })
     .then(function() {
       if (!auto) showSaveStatus('\u2713 Progress saved!', true);
     })
